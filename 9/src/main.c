@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
 //      printf("Found unzeroed polynom %d\n", i);
 //  }
   
-  char *binary = moveCRC(argv[1], 0b100000001);
+  char *binary = moveCRC(argv[1], 0b100011101);
   int decimal = btoi(binary, 8);
   
   printf("Results\n---------------\nsymbolic\t%c\t\nbinary\t\t", decimal > 127 ? decimal - 127 : (char)decimal);
