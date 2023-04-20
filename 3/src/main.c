@@ -2,6 +2,9 @@
 
 void func(char *input) {
   char buffer[100];
+  if (strlen(input) > 100) {
+	  return;
+  }
   strcpy(buffer, input);
 }
 
