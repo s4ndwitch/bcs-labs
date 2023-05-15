@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+int pairsCounter;
+char ***pairs;
+
 struct Node {
     char *data;
     int rate;
@@ -17,6 +20,32 @@ struct Node *create_node() {
     newNode->sp = NULL;
 
     return newNode;
+}
+
+void descend(struct Node *node, char *code) {
+
+    if (strlen(node->data) == 1) {
+        pairs[pairsCounter][0] = node->data;
+        char *newCode = (char *)malloc(sizeof(char) * strlen(code));
+        pairs[pairsCounter++][1] = newCode;
+
+        return;
+    } {
+        printf("current code is %s\n", code);
+        char *newCode = (char *)malloc(sizeof(char) * (strlen(code) + 2));
+        memcpy(newCode, code, sizeof(char) * strlen(code));
+        strcat(newCode, "0");
+        printf("new code is %s\n", newCode);
+        descend(node->fp, newCode);
+        newCode[strlen(code)] = '1';
+        printf("another code is %s\n", newCode);
+        descend(node->sp, newCode);
+
+        free(code);
+
+        return; 
+    }
+
 }
 
 int main(int argc, char *argv[]) {
@@ -48,6 +77,11 @@ int main(int argc, char *argv[]) {
 
     struct Node *nodes = (struct Node *)malloc(sizeof(struct Node) * counter);
     int nodesLength = counter;
+
+    pairs = (char ***)malloc(sizeof(char **) * counter);
+    for (int i = 0; i < counter; i++)
+        pairs[i] = (char **)malloc(sizeof(char *) * 2);
+    pairsCounter = 0;
 
     for (int i = 0; i < 128; i++) {
         if (dictionary[i] != 0) {
@@ -105,7 +139,13 @@ int main(int argc, char *argv[]) {
 
     }
 
-    
+    char *code = (char *)malloc(sizeof(char) * 1);
+    code[0] = '\0';
+    descend(nodes, code);
+
+    for (int i = 0; i < pairsCounter; i++) {
+        printf("%s = %s\n", pairs[i][0], pairs[i][1]);
+    }    
 
     return 0;
 }
