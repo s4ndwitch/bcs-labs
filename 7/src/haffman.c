@@ -26,22 +26,23 @@ void descend(struct Node *node, char *code) {
 
     if (strlen(node->data) == 1) {
         pairs[pairsCounter][0] = node->data;
-        char *newCode = (char *)malloc(sizeof(char) * strlen(code));
+        char *newCode = (char *)malloc(sizeof(char) * (strlen(code) + 1));
+        strcpy(newCode, code);
         pairs[pairsCounter++][1] = newCode;
 
         return;
     } {
-        printf("current code is %s\n", code);
         char *newCode = (char *)malloc(sizeof(char) * (strlen(code) + 2));
         memcpy(newCode, code, sizeof(char) * strlen(code));
-        strcat(newCode, "0");
-        printf("new code is %s\n", newCode);
+        newCode[strlen(code)] = '0';
+        newCode[strlen(code) + 1] = '\0';
+        
         descend(node->fp, newCode);
         newCode[strlen(code)] = '1';
-        printf("another code is %s\n", newCode);
+
         descend(node->sp, newCode);
 
-        free(code);
+        free(newCode);
 
         return; 
     }
