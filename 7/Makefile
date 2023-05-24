@@ -1,9 +1,18 @@
-.PHONY: all compile run
+.PHONY: all compile run d e python
+
+python:
+	python3 src/huffman.py -d data/output.txt
 
 all: compile run
 
+e:
+	python3 src/huffman.py -e data/input.txt data/output.txt
+
+d:
+	python3 src/huffman.py -d data/output.txt
+
 compile:
-	gcc src/haffman.c -o bin/haffman
+	gcc src/huffman.c -o bin/huffman
 
 run:
-	bin/haffman data/input.txt data/output.txt
+	bin/huffman data/input.txt data/output.txt
