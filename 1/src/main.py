@@ -1,108 +1,108 @@
 
-#!/bin/python3
 
-from sys import argv;
-from random import randint;
-from base64 import b64encode, b64decode
+from sys import argv
+from random import randint
+
+def read_bytes(file_name: str) -> int:
+	return list(map(lambda x: int(x, 16), open(file_name, "r").read().strip().split("/")))
+
+def write_bytes(file_name: str, data: int) -> int:
+	open(file_name, "w").write("/".join(list(map(lambda x: hex(x)[2:], data))))
+	return 0
+
+#################### Encoding #######################
+
+def cypher(key: int, symbol: int) -> int:
+
+	result: int = 0
+	for i in range(1, 9):
+		if (symbol % 2 == 1):
+			result += key[-i]
+		symbol //= 2
+	return result
+
+def encode():
+	return 1 if len(argv) < 5 else write_bytes(argv[4], list(map(lambda x: cypher(read_bytes(argv[3]), ord(x)), open(argv[2], "r").read().strip())))
 
 
-class LengthError(Exception):
-    def __init__(self: object) -> None:
-        super().__init__("Not enough arguments")
+############### Decoding #####################
+
+def decypher(key: int, nr: int, m: int, symbol: int) -> int:
+	code: int = (symbol * nr) % m
+	result: int = 0
+	for i in range(1, 9):
+		if key[-i] <= code:
+			code -= key[-i]
+			result += 2 ** (i - 1)
+	return result
+
+def decode():
+	if len(argv) < 5:
+		return 1
+
+	open(argv[4], "w").write("".join(list(map(lambda x: chr(decypher(read_bytes(argv[3])[:-2], read_bytes(argv[3])[-1], read_bytes(argv[3])[-2], x)), read_bytes(argv[2])))))
+
+	return 0
 
 
-def gcd(a: int, b: int) -> int:
-    while (a > 0 and b > 0):
-        if a > b:
-            a -= b;
-        else:
-            b -= a;
-    return a if a > 0 else b;
+################### Generating ####################
 
-def finish(a: str) -> str:
-    while len(a) < 8:
-        a = "0" + a;
-    return a;
+def euqlid(a: int, b: int) -> int:
+	while a != 0 and b != 0:
+		if a > b:
+			a -= b
+		else:
+			b -= a
+	return a if a != 0 else b
 
-def generate() -> None:
+def generate():
 
-    counter: int = 0;
+	pub_name = "mh.pub"
+	priv_name = "mh.priv"
 
-    key: int = []
-    for i in range(8):
-        key += [randint(counter + 1, counter + 11)];
-        counter += key[-1];
-    
-    counter: int = randint(counter + 1, counter + 11);
-    n: int = 1
-    for i in range(2, counter):
-        if gcd(i, counter) == 1:
-            n: int = i;
-            break;
-    
-    print("Where to save public key? (mh.pub): ", end="");
-    file_name: str = input();
-    open(file_name if file_name.strip() != "" else "mh.pub", "w").write(
-        "/".join(map(lambda x: b64encode(hex(int((x * n) % counter))[2:].encode()).decode(), key))
-    );
+	if len(argv) > 3:
+		pub_name = argv[2]
+		priv_name = argv[3]
 
-    for i in range(1, 2 ** int.__sizeof__(1), counter):
-        if i % n == 0:
-            n = (int)(i / n);
-            break;
-    
-    print("Where to save private key? (mh.priv): ", end="");
-    file_name: str = input();
-    open(file_name if file_name.strip() != "" else "mh.priv", "w").write(
-        "/".join(map(lambda x: b64encode(hex(x)[2:].encode()).decode(), key)) \
-            + f"/{b64encode(hex(n)[2:].encode()).decode()}/{b64encode(hex(counter)[2:].encode()).decode()}"
-    );
+	priv_key = []
+	for _ in range(8):
+		priv_key += [sum(priv_key) + randint(1, 1000)]
+	m = sum(priv_key) + randint(1, 1000)
 
-    return;
+	n = m - 1
+	for i in range(2, m):
+		if euqlid(i, m) == 1:
+			n = i
+			break
 
-def encode() -> None:
+	nr = 1
+	while nr % n != 0:
+		nr += m
+	nr //= n
 
-    if len(argv) < 5:
-        raise LengthError;
+	pub_key = list(map(lambda x: (x * n) % m, priv_key))
+	write_bytes(pub_name, pub_key)
+	write_bytes(priv_name, priv_key + [m] + [nr])
 
-    key = list(map(lambda x: int(b64decode(x).decode(), base=16),
-                    open(argv[3], "r").read().strip().split("/")));
+	return 0
 
-    with open(argv[4], "w") as file:
-        for symbol in open(argv[2], "r").read():
-            code = finish(bin(ord(symbol))[2:])
-            count = 0
-            for i in range(8):
-                count += int(code[i]) * key[i]
-            file.write(b64encode(hex(count)[2:].encode()).decode() + "/")
 
-def decode() -> None:
-
-    if len(argv) < 5:
-        raise LengthError;
-
-    key = list(map(lambda x: int(b64decode(x).decode(), base=16),
-                    open(argv[3], "r").read().strip().split("/")));
-    key, n, m = key[:8], key[8], key[9];
-
-    with open(argv[4], "w") as file:
-        for byte in open(argv[2], "r").read().strip().split("/")[:-1]:
-            number = (int(b64decode(byte).decode(), base=16) * n) % m;
-            symbol = 0
-            for i in range(7, -1, -1):
-                if key[i] <= number:
-                    symbol += 2 ** (7 - i)
-                    number -= key[i]
-            file.write(chr(symbol));
-
-    return;
+################### main #######################
 
 if __name__ == "__main__":
-    if len(argv) < 2:
-        raise LengthError;
-    if argv[1] == "-g" or argv[1] == "--generate":
-        generate();
-    elif argv[1] == "-d" or argv[1] == "--decode":
-        decode();
-    elif argv[1] == "-e" or argv[1] == "--encode":
-        encode();
+
+	if len(argv) < 2:
+		raise IndexError("Not enough arguments")
+		exit(1)
+
+	if argv[1] in ["-d", "--decode"]:
+		exit(decode())
+	elif argv[1] in ["-e", "--encode"]:
+		exit(encode())
+	elif argv[1] in ["-g", "--generate"]:
+		exit(generate())
+	else:
+		raise ValueError("Unknown flag on the first position")
+		exit(2)
+
+	exit(0)
