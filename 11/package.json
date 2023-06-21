@@ -1,0 +1,21 @@
+{
+  "name": "11",
+  "version": "1.0.0",
+  "description": "asdf",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-builder build --linux AppImage"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@electron-forge/cli": "^6.2.1",
+    "electron": "^25.1.1"
+  },
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "jquery": "^3.7.0"
+  }
+}
