@@ -103,20 +103,17 @@ def decode():
         print("Not enough arguments")
         exit(1)
 
-    data = open(argv[2], "rb").read().split(chr(128).encode())
-    # data_readable = open(argv[2], "r").read().split(chr(128))
+    data = open(argv[2], "rb").read().decode().split(chr(128))
     number, codes, data = data[0], data[1], data[2:]
-    number = int(number.decode())
-    data = chr(128).encode().join(data)
+    number = int(number)
+    data = chr(128).join(data)
 
     print(codes)
-    readable = False
     for i in range(0, len(codes), 3):
-        if readable is False:
-            print(chr(codes[i]), itob(int(chr(codes[i + 1])), codes[i + 2]))
-    codes = {chr(codes[i]): itob(int(chr(codes[i + 1])), codes[i + 2]) for i in range(0, len(codes), 3)}
+        print(codes[i], itob(int(codes[i + 1]), ord(codes[i + 2])))
+    codes = {codes[i]: itob(int(codes[i + 1]), ord(codes[i + 2])) for i in range(0, len(codes), 3)}
 
-    data = "".join([itob(7, data[i]) for i in range(len(data))])
+    data = "".join([itob(7, ord(data[i])) for i in range(len(data))])
 
     while data != "" and number != 0:
         for symbol in codes.keys():
