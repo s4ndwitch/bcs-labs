@@ -1,13 +1,10 @@
-
-
-#!/bin/bash
+#!/usr/bin/python3
 
 from sys import argv, exit
 from datetime import datetime
 
 
 class Node():
-
     def __init__(self, fp, sp):
         self.fp = fp
         self.sp = sp
@@ -31,16 +28,17 @@ def btoi(binary: str) -> int:
 
 def encode():
 
-    startTime = datetime.now().second * 6 + datetime.now().microsecond
+    startTime = datetime.now().second * (10 ** 6) + datetime.now().microsecond
 
     if len(argv) < 4:
         print("Not enough arguments")
         exit(1)
     
-    data = open(argv[2]).read()
+    data = open(argv[2], "rb").read()
 
     dictionary = dict()
     for symbol in data:
+        symbol = chr(symbol)
         if symbol in dictionary.keys():
             dictionary[symbol] += 1
         else:
@@ -49,28 +47,29 @@ def encode():
     dictionary = sorted(dictionary.items(), key=lambda x: x[1], reverse=True)
 
     saved_copy = dictionary.copy()
-    while len(dictionary) - 1:
-        last, previous, dictionary = dictionary[-1], dictionary[-2], dictionary[:-2]
-        dictionary += [(Node(last[0], previous[0]), last[1] + previous[1])]
-        dictionary = sorted(dictionary, key=lambda x: x[1], reverse=True)
+    if len(dictionary) > 1:
+        while len(dictionary) - 1:
+            last, previous, dictionary = dictionary[-1], dictionary[-2], dictionary[:-2]
+            dictionary += [(Node(last[0], previous[0]), last[1] + previous[1])]
+            dictionary = sorted(dictionary, key=lambda x: x[1], reverse=True)
 
-    codes = huffman(dictionary[0][0])
+        codes = huffman(dictionary[0][0])
+    else:
+        codes = {dictionary[0][0]: "0"}
 
-    print("Codes are:")
-    for char in list(map(lambda x: x[0], saved_copy)):
-        print(f"{char} {codes[char]}")
-    
     outputFile = open(argv[3], "wb")
 
     outputFile.write(str(sum([len(codes[saved_copy[i][0]]) * saved_copy[i][1] for i in range(len(saved_copy))])).encode())
     outputFile.write(chr(128).encode())
-    for symbol in list(map(lambda x: x[0], saved_copy)):
-        outputFile.write(f"{symbol}{len(codes[symbol])}{chr(btoi(codes[symbol]))}".encode())
+    outputFile.write(str(len(codes.keys())).encode())
     outputFile.write(chr(128).encode())
+    for symbol in list(map(lambda x: x[0], saved_copy)):
+        outputFile.write(f"{symbol}{chr(len(codes[symbol]))}{chr(btoi(codes[symbol]))}".encode())
 
     buffer = ""
 
-    for symbol in open(argv[2], "r").read():
+    for symbol in open(argv[2], "rb").read():
+        symbol = chr(symbol)
         buffer += codes[symbol]
         if len(buffer) >= 7:
             outputFile.write(chr(btoi(buffer[:7])).encode())
@@ -81,9 +80,9 @@ def encode():
 
     outputFile.close()
 
-    endTime = datetime.now().second * 6 + datetime.now().microsecond
+    endTime = datetime.now().second * (10 ** 6) + datetime.now().microsecond
 
-    print(f"Finished in {endTime - startTime}μss. Coef is {len(open(argv[2]).read()) / len(open(argv[3]).read())}")
+    print(f"Finished in {endTime - startTime}μss. Coef is {len(open(argv[2], 'rb').read()) / len(open(argv[3], 'rb').read())}")
 
 def ctob(length: int, symbol: str) -> str:
     result = bin(ord(symbol))[2:]
@@ -99,30 +98,38 @@ def itob(length: int, number: int) -> str:
 
 def decode():
     
-    if len(argv) < 3:
+    if len(argv) < 4:
         print("Not enough arguments")
         exit(1)
 
-    data = open(argv[2], "rb").read().decode().split(chr(128))
-    number, codes, data = data[0], data[1], data[2:]
-    number = int(number)
-    data = chr(128).join(data)
+    startTime = datetime.now().second * (10 ** 6) + datetime.now().microsecond
 
-    print(codes)
-    for i in range(0, len(codes), 3):
-        print(codes[i], itob(int(codes[i + 1]), ord(codes[i + 2])))
-    codes = {codes[i]: itob(int(codes[i + 1]), ord(codes[i + 2])) for i in range(0, len(codes), 3)}
+    data = open(argv[2], "rb").read().decode().split(chr(128))
+    file = open(argv[3], "w")
+    number = int(data[0])
+    groups = int(data[1])
+    data = chr(128).join(data[2:])
+    codes, data = data[:groups * 3], data[groups * 3:]
+
+    # for i in range(0, len(codes), 3):
+    #     print(f"{codes[i]}: {itob(ord(codes[i + 1]), ord(codes[i + 2]))}")
+    codes = {(codes[i]): itob(ord(codes[i + 1]), ord(codes[i + 2])) for i in range(0, len(codes), 3)}
+    # exit(0)
 
     data = "".join([itob(7, ord(data[i])) for i in range(len(data))])
 
     while data != "" and number != 0:
         for symbol in codes.keys():
             if data.startswith(codes[symbol]):
-                print(symbol, end="")
+                file.write(symbol)
                 data = data[len(codes[symbol]):]
                 number -= len(codes[symbol])
                 break
-    print()
+        
+    file.close()
+    endTime = datetime.now().second * (10 ** 6) + datetime.now().microsecond
+
+    print(f"Finished in {endTime - startTime}μss.")
 
 if __name__ == "__main__":
 
